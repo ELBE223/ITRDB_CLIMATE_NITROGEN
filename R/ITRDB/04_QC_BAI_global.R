@@ -12,7 +12,7 @@
 #   - bai/<region>/<SITE_CODE>_BAI.csv
 ############################################################
 
-## --- 0) Packages ---------------------------------------------------
+# --- 0) Packages ---------------------------------------------------
 
 if (!requireNamespace("pacman", quietly = TRUE)) {
   install.packages("pacman")
@@ -26,7 +26,18 @@ pacman::p_load(
   rnaturalearthdata
 )
 
-## --- 1) Paths ------------------------------------------------------
+# --- 0b) Global QC parameters --------------------------------------
+
+# tolerance for BAI comparison (new vs stored)
+tol <- 1e-6
+
+# threshold for "extreme" mean BAI (mm^2)
+high_thresh <- 20000
+
+# optional: restrict QC to a subset of sites
+qc_site_subset <- NULL  # e.g. c("AUS116", "AK001")
+
+# --- 1) Paths ------------------------------------------------------
 
 base_dir       <- here::here("itrdb_global_example")
 rwl_root       <- file.path(base_dir, "rwl")
@@ -47,20 +58,26 @@ if (!file.exists(bai_sum_path)) {
 
 dir.create(bai_root, recursive = TRUE, showWarnings = FALSE)
 
-## --- 2) Read metadata and summary ---------------------------------
+# --- 2) Read metadata and summary ---------------------------------
 
 meta_df <- read.csv(site_meta_path, stringsAsFactors = FALSE)
 sum_df  <- read.csv(bai_sum_path,   stringsAsFactors = FALSE)
 
-# keep only sites with RWL
+# keep only sites with local RWL
 meta_df <- meta_df[meta_df$has_classic_rwl, , drop = FALSE]
 
-# simple check: now we use 'region' instead of 'region_path'
 if (!all(c("region", "site_code", "classic_rwl_path") %in% names(meta_df))) {
   stop("Metadata is missing required columns (region, site_code, classic_rwl_path).")
 }
 
-## --- 3) QC: recompute BAI and compare ------------------------------
+# optional QC subset
+if (!is.null(qc_site_subset)) {
+  meta_df <- meta_df[meta_df$site_code %in% qc_site_subset, , drop = FALSE]
+}
+
+cat("Number of sites for QC:", nrow(meta_df), "\n\n")
+
+# --- 3) QC: recompute BAI and compare ------------------------------
 
 qc_list <- list()
 
@@ -72,7 +89,7 @@ for (i in seq_len(nrow(meta_df))) {
                 " (", row$region, ")")
   cat(msg, "\n")
   
-  # Paths
+  # paths
   rwl_path <- row$classic_rwl_path
   bai_file <- file.path(
     bai_root,
@@ -80,7 +97,7 @@ for (i in seq_len(nrow(meta_df))) {
     paste0(row$site_code, "_BAI.csv")
   )
   
-  # Check presence
+  # check presence
   if (!file.exists(rwl_path)) {
     cat("  Missing RWL file, skip.\n")
     next
@@ -90,22 +107,22 @@ for (i in seq_len(nrow(meta_df))) {
     next
   }
   
-  # --- Read RWL and recompute BAI ----------------------------------
-  rwl <- try(read.rwl(rwl_path), silent = TRUE)
+  # --- read RWL and recompute BAI ----------------------------------
+  rwl <- try(dplR::read.rwl(rwl_path), silent = TRUE)
   if (inherits(rwl, "try-error") || !is.data.frame(rwl) ||
       nrow(rwl) == 0L || ncol(rwl) == 0L) {
     cat("  Could not read RWL, skip.\n")
     next
   }
   
-  bai_new <- try(bai.in(rwl), silent = TRUE)
+  bai_new <- try(dplR::bai.in(rwl), silent = TRUE)
   if (inherits(bai_new, "try-error") || !is.data.frame(bai_new) ||
       nrow(bai_new) == 0L || ncol(bai_new) == 0L) {
     cat("  BAI computation failed, skip.\n")
     next
   }
   
-  # --- Read stored BAI ---------------------------------------------
+  # --- read stored BAI ---------------------------------------------
   bai_stored_df <- try(read.csv(bai_file, stringsAsFactors = FALSE), silent = TRUE)
   if (inherits(bai_stored_df, "try-error") ||
       !"year" %in% names(bai_stored_df)) {
@@ -113,7 +130,7 @@ for (i in seq_len(nrow(meta_df))) {
     next
   }
   
-  # Years
+  # years
   years_new    <- suppressWarnings(as.integer(rownames(bai_new)))
   years_stored <- suppressWarnings(as.integer(bai_stored_df$year))
   
@@ -128,7 +145,7 @@ for (i in seq_len(nrow(meta_df))) {
     next
   }
   
-  # Columns (series)
+  # series names
   stored_cols <- setdiff(colnames(bai_stored_df), "year")
   common_cols <- intersect(colnames(bai_new), stored_cols)
   if (!length(common_cols)) {
@@ -136,14 +153,13 @@ for (i in seq_len(nrow(meta_df))) {
     next
   }
   
-  # Align by years and columns
+  # align by years and columns
   idx_new    <- match(common_years, years_new)
   idx_stored <- match(common_years, years_stored)
   
   bai_new_sub    <- bai_new[idx_new, common_cols, drop = FALSE]
   bai_stored_sub <- bai_stored_df[idx_stored, c("year", common_cols), drop = FALSE]
   
-  # matrices
   m_new    <- as.matrix(bai_new_sub)
   m_stored <- as.matrix(bai_stored_sub[, common_cols, drop = FALSE])
   
@@ -152,7 +168,7 @@ for (i in seq_len(nrow(meta_df))) {
     next
   }
   
-  # Differences
+  # differences
   diffs <- as.numeric(m_new - m_stored)
   diffs <- diffs[!is.na(diffs)]
   
@@ -181,7 +197,6 @@ for (i in seq_len(nrow(meta_df))) {
   )
 }
 
-# Combine
 if (length(qc_list) == 0L) {
   stop("No QC entries could be computed. Check inputs and paths.")
 }
@@ -193,14 +208,12 @@ write.csv(qc_df, qc_path, row.names = FALSE)
 
 cat("\nQC summary written to:\n  ", normalizePath(qc_path), "\n\n")
 
-## --- 4) Quick QC stats --------------------------------------------
-
-tol <- 1e-6
+# --- 4) Quick QC stats --------------------------------------------
 
 n_ok  <- sum(qc_df$max_abs_diff < tol, na.rm = TRUE)
 n_bad <- sum(qc_df$max_abs_diff >= tol, na.rm = TRUE)
 
-cat("Sites with BAI == stored BAI (up to rounding):", n_ok, "\n")
+cat("Sites with BAI == stored BAI (up to tol =", tol, "):", n_ok, "\n")
 cat("Sites with deviations >", tol, ":", n_bad, "\n\n")
 
 if (n_bad > 0) {
@@ -208,10 +221,7 @@ if (n_bad > 0) {
   print(head(qc_df[order(-qc_df$max_abs_diff), ], 10))
 }
 
-## --- 5) Extreme mean BAI sites ------------------------------------
-
-# threshold can be adjusted, e.g. 20000 mm^2
-high_thresh <- 20000
+# --- 5) Extreme mean BAI sites ------------------------------------
 
 extreme_df <- qc_df[qc_df$mean_bai_recomputed > high_thresh, , drop = FALSE]
 
@@ -227,12 +237,10 @@ if (nrow(extreme_df) == 0L) {
   cat("\nList written to:\n  ", normalizePath(extreme_path), "\n\n")
 }
 
-## --- 6) World map of sites by continent group ---------------------
+# --- 6) World map of sites by continent group ---------------------
 
-# Use BAI summary for plotting (has lat/lon + mean BAI etc.)
-plot_df <- sum_df
+plot_df <- sum_df  # BAI summary (has lat/lon + bai_mean)
 
-# Ensure lat/lon + region exist
 if (!all(c("lat", "lon", "region") %in% names(plot_df))) {
   stop("BAI summary is missing 'lat', 'lon', or 'region' columns.")
 }
@@ -243,7 +251,7 @@ if (nrow(plot_df) == 0L) {
   stop("No sites with coordinates available for mapping.")
 }
 
-# Continent grouping based on region
+# simple continent grouping
 continent_group <- function(region) {
   if (grepl("^africa", region, ignore.case = TRUE)) {
     "Africa"
@@ -255,9 +263,8 @@ continent_group <- function(region) {
     "Europe"
   } else if (grepl("^southamerica", region, ignore.case = TRUE)) {
     "South America"
-  } else if (grepl("^mexico", region, ignore.case = TRUE)) {
-    "North America"
-  } else if (grepl("^northamerica", region, ignore.case = TRUE)) {
+  } else if (grepl("^northamerica", region, ignore.case = TRUE) ||
+             grepl("mexico", region, ignore.case = TRUE)) {
     "North America"
   } else {
     "Other"
@@ -270,13 +277,13 @@ plot_df$continent_group <- vapply(
   FUN.VALUE = character(1)
 )
 
-# Optional: log10 mean BAI for symbol size
+# optional: log10 mean BAI for symbol size
 if (!"bai_mean" %in% names(plot_df)) {
   plot_df$bai_mean <- NA_real_
 }
 plot_df$bai_mean_log10 <- log10(plot_df$bai_mean + 1)
 
-# Convert to sf points
+# to sf points
 sites_sf <- sf::st_as_sf(
   plot_df,
   coords = c("lon", "lat"),
@@ -284,17 +291,17 @@ sites_sf <- sf::st_as_sf(
   remove = FALSE
 )
 
-# World basemap
+# world basemap
 world <- rnaturalearth::ne_countries(
   scale = "medium",
   returnclass = "sf"
 )
 
-# Output folder for maps
+# output folder for maps
 maps_dir <- file.path(base_dir, "maps_global")
 dir.create(maps_dir, recursive = TRUE, showWarnings = FALSE)
 
-# Map: sites colored by continent group
+# map: sites colored by continent group
 p_world <- ggplot() +
   geom_sf(data = world, fill = "grey95", color = "grey80") +
   geom_sf(
