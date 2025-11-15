@@ -1,5 +1,5 @@
 ############################################################
-# 06_download_climate_and_ndep.R
+# 01_download_climate_and_ndep.R
 #
 # Download:
 #  - CRU TS v4.09 (temperature + precipitation, 1901–2024)
