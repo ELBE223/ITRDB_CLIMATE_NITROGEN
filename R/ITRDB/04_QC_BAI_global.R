@@ -307,7 +307,7 @@ p_world <- ggplot() +
   geom_sf(
     data = sites_sf,
     aes(color = continent_group),
-    size = 1.5,
+    size = 0.5,
     alpha = 0.8
   ) +
   coord_sf(expand = FALSE) +
