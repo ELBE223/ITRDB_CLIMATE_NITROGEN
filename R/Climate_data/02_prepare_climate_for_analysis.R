@@ -1,5 +1,5 @@
 ############################################################
-# 07_prepare_BAI_climate_for_LMM.R
+# 02_prepare_BAI_climate_for_LMM.R
 #
 # Goal:
 #  - Combine boreal BAI (site-year) with:
