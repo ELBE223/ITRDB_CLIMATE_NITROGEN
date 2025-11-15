@@ -319,8 +319,8 @@ p_world <- ggplot() +
     axis.ticks = element_blank()
   ) +
   labs(
-    title = "ITRDB sites with BAI (global)",
-    subtitle = "Colored by continent group",
+    title = "",
+    subtitle = "",
     x = NULL,
     y = NULL
   )
