@@ -6,14 +6,14 @@
 #   - classic *.rwl files in rwl/<region>/      (from 01)
 ############################################################
 
-## --- 0) Packages ---------------------------------------------------
+# --- 0) Packages ---------------------------------------------------
 
 if (!requireNamespace("pacman", quietly = TRUE)) {
   install.packages("pacman")
 }
-pacman::p_load(here, dplR)
+pacman::p_load(here, dplR)  # paths + tree-ring tools
 
-## --- 1) Paths ------------------------------------------------------
+# --- 1) Paths ------------------------------------------------------
 
 base_dir       <- here::here("itrdb_global_example")
 rwl_root       <- file.path(base_dir, "rwl")
@@ -28,11 +28,11 @@ if (!file.exists(site_meta_path)) {
 
 dir.create(bai_root, recursive = TRUE, showWarnings = FALSE)
 
-## --- 2) Read site metadata ----------------------------------------
+# --- 2) Read site metadata ----------------------------------------
 
 meta_df <- read.csv(site_meta_path, stringsAsFactors = FALSE)
 
-# Required columns (adapted to 'region' instead of 'region_path')
+# Required columns from script 02
 req_cols <- c(
   "region", "site_code", "classic_rwl_path", "has_classic_rwl",
   "species_code", "species_name", "lat", "lon", "elevation_m",
@@ -45,14 +45,14 @@ if (length(missing_cols) > 0) {
        paste(missing_cols, collapse = ", "))
 }
 
-# Keep only sites where we have a classic *.rwl locally
+# Keep only sites with local classic *.rwl
 meta_df <- meta_df[meta_df$has_classic_rwl, , drop = FALSE]
 
 if (nrow(meta_df) == 0L) {
   stop("No sites with classic RWL files available. Check scripts 01 and 02.")
 }
 
-# Optional: restrict to subset of sites for testing
+# Optional subset for testing
 site_subset <- NULL  # e.g. c("AUS116", "CAN001", "AK001")
 if (!is.null(site_subset)) {
   meta_df <- meta_df[meta_df$site_code %in% site_subset, , drop = FALSE]
@@ -60,10 +60,11 @@ if (!is.null(site_subset)) {
 
 cat("Number of sites to process:", nrow(meta_df), "\n\n")
 
-## --- 3) Prepare log file ------------------------------------------
+# --- 3) Prepare log file ------------------------------------------
 
 log_path <- file.path(bai_root, "bai_global_log.txt")
 log_con  <- file(log_path, open = "wt")
+on.exit(close(log_con), add = TRUE)
 
 writeLines(paste0("Global BAI computation log - ", Sys.time()), log_con)
 writeLines(paste("Number of sites:", nrow(meta_df)), log_con)
@@ -72,7 +73,7 @@ writeLines("", log_con)
 # List to collect per-site summary stats
 summary_list <- list()
 
-## --- 4) Loop over sites and compute BAI ---------------------------
+# --- 4) Loop over sites and compute BAI ---------------------------
 
 for (i in seq_len(nrow(meta_df))) {
   row <- meta_df[i, ]
@@ -85,7 +86,7 @@ for (i in seq_len(nrow(meta_df))) {
   
   rwl_path <- row$classic_rwl_path
   
-  # Safety: file exists?
+  # Safety: local file must exist
   if (!file.exists(rwl_path)) {
     warn <- paste("  Missing RWL file:", rwl_path)
     cat(warn, "\n")
@@ -93,8 +94,8 @@ for (i in seq_len(nrow(meta_df))) {
     next
   }
   
-  ## --- Read RWL ----------------------------------------------------
-  rwl <- try(read.rwl(rwl_path), silent = TRUE)
+  ## --- Read RWL ---------------------------------------------------
+  rwl <- try(dplR::read.rwl(rwl_path), silent = TRUE)
   if (inherits(rwl, "try-error") || !is.data.frame(rwl) ||
       nrow(rwl) == 0L || ncol(rwl) == 0L) {
     warn <- paste("  Could not read RWL for", row$site_code)
@@ -103,8 +104,8 @@ for (i in seq_len(nrow(meta_df))) {
     next
   }
   
-  ## --- Compute BAI -------------------------------------------------
-  bai <- try(bai.in(rwl), silent = TRUE)
+  ## --- Compute BAI (inside-out) ----------------------------------
+  bai <- try(dplR::bai.in(rwl), silent = TRUE)
   if (inherits(bai, "try-error") || !is.data.frame(bai) ||
       nrow(bai) == 0L || ncol(bai) == 0L) {
     warn <- paste("  BAI computation failed for", row$site_code)
@@ -139,8 +140,7 @@ for (i in seq_len(nrow(meta_df))) {
   
   ## --- Save per-site BAI table ------------------------------------
   
-  # Create region-specific BAI folder
-  # 'region' may contain slashes (e.g. "northamerica/usa") -> nested folders
+  # Region-specific BAI folder (region may contain slashes)
   bai_dir_region <- file.path(bai_root, row$region)
   dir.create(bai_dir_region, recursive = TRUE, showWarnings = FALSE)
   
@@ -189,9 +189,7 @@ for (i in seq_len(nrow(meta_df))) {
   )
 }
 
-close(log_con)
-
-## --- 5) Combine and save summary table ----------------------------
+# --- 5) Combine and save summary table ----------------------------
 
 if (length(summary_list) > 0) {
   summary_df <- do.call(rbind, summary_list)
@@ -209,14 +207,3 @@ if (length(summary_list) > 0) {
   cat("\nNo sites produced valid BAI summaries. Check the log file:\n  ",
       normalizePath(log_path), "\n")
 }
-
-############################################################
-# Result:
-#  - Per-site BAI time series:
-#      bai/<region>/<SITE_CODE>_BAI.csv
-#      e.g. bai/northamerica/usa/AZ001_BAI.csv
-#  - Global summary:
-#      metadata/itrdb_global_BAI_site_summary.csv
-#  - Log file:
-#      bai/bai_global_log.txt
-############################################################
