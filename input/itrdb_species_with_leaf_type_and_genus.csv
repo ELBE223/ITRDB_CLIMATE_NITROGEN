@@ -1,0 +1,49 @@
+pecies_code	leaf_type	scientific_name	genus	taxon_group
+ABAL	conifer	Abies alba Mill.	Abies	Abies
+ABAM	conifer	Abies amabilis Douglas ex J. Forbes	Abies	Abies
+ABLA	conifer	Abies lasiocarpa (Hook.) Nutt.	Abies	Abies
+ALCR	broadleaf	Alnus viridis var. crispa (Ait.) Turrill	Alnus	Alnus
+ALSP	broadleaf	Alnus spp. Mill.	Alnus	Alnus
+BEAK	broadleaf	Betula papyrifera var. neoalaskana (Sarg.) Raup	Betula	Betula
+BEER	broadleaf	Betula ermanii Cham.	Betula	Betula
+BEPA	broadleaf	Betula papyrifera Marsh.	Betula	Betula
+BEPU	broadleaf	Betula pubescens Ehrh. = Betula carpatica Walldst.& Kit.ex Willd.	Betula	Betula
+BESP	broadleaf	Betula spp. L.	Betula	Betula
+CHNO	conifer	Chamaecyparis nootkatensis (D. Don) Spach	Chamaecyparis	Chamaecyparis
+FASY	broadleaf	Fagus sylvatica L.	Fagus	Fagus
+FREX	broadleaf	Fraxinus excelsior L.	Fraxinus	Fraxinus
+LADE	conifer	Larix decidua Mill.	Larix	Larix
+LAGM	conifer	Larix gmelinii (Rupr.) Kuzen.=L.kurulensis(Maxim ex Regel)Pilg.=L.dahuricaTurcz.exTratv=Larix cajanderi Mayr	Larix	Larix
+LALA	conifer	Larix laricina (Du Roi) K. Koch	Larix	Larix
+LALY	conifer	Larix lyallii Parl.	Larix	Larix
+LASI	conifer	Larix sibirica Ledeb. = Larix russica (Endl.) Sabine ex Trautv.	Larix	Larix
+LASP	conifer	Larix spp. Mill.	Larix	Larix
+MIXD	other	Various taxa	Various	Various
+PCAB	conifer	Picea abies (L.) H. Karst.	Picea	Picea
+PCEN	conifer	Picea engelmannii Parry ex Engelm.	Picea	Picea
+PCGL	conifer	Picea glauca (Moench) Voss	Picea	Picea
+PCMA	conifer	Picea mariana (Mill.) Britton, Sterns, & Poggenb.	Picea	Picea
+PCOB	conifer	Picea obovata Ledeb. = Picea abies (L.) H. Karst. subsp. obovata (Ledeb.) Hultén	Picea	Picea
+PCSI	conifer	Picea sitchensis (Bong.) Carrière	Picea	Picea
+PCSP	conifer	Picea spp. A. Dietr.	Picea	Picea
+PIAL	conifer	Pinus albicaulis Engelm.	Pinus	Pinus
+PIBA	conifer	Pinus balfouriana Balf.	Pinus	Pinus
+PIBN	conifer	Pinus banksiana Lamb.	Pinus	Pinus
+PICO	conifer	Pinus contorta Douglas ex Loudon	Pinus	Pinus
+PIFL	conifer	Pinus flexilis E. James	Pinus	Pinus
+PIPO	conifer	Pinus ponderosa Douglas ex C. Lawson	Pinus	Pinus
+PIRE	conifer	Pinus resinosa Aiton	Pinus	Pinus
+PISI	conifer	Pinus sibirica Du Tour	Pinus	Pinus
+PIST	conifer	Pinus strobus L.	Pinus	Pinus
+PISY	conifer	Pinus sylvestris L.	Pinus	Pinus
+PPTR	broadleaf	Populus tremuloides Michx.	Populus	Populus
+PSME	conifer	Pseudotsuga menziesii (Mirb.) Franco	Pseudotsuga	Pseudotsuga
+QUMA	broadleaf	Quercus macrocarpa Michx.	Quercus	Quercus
+QUPE	broadleaf	Quercus petraea (Matt.) Liebl. = Quercus sessiliflora Salisb.	Quercus	Quercus
+QURO	broadleaf	Quercus robur L. = Quercus pendunculata Ehrl.	Quercus	Quercus
+QUSP	broadleaf	Quercus spp. L.	Quercus	Quercus
+SALA	broadleaf	Salix lanata L.	Salix	Salix
+SAPC	broadleaf	Salix pulchra Cham.	Salix	Salix
+THOC	conifer	Thuja occidentalis L.	Thuja	Thuja
+TICO	broadleaf	Tilia cordata Mill.	Tilia	Tilia
+TSME	conifer	Tsuga mertensiana (Bong.) Carrière	Tsuga	Tsuga
